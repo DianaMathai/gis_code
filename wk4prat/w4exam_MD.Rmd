@@ -1,0 +1,93 @@
+---
+title: "wk4Exam"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(dplyr)
+library(here)
+library(sf)
+library(tidyr)
+library(janitor)
+
+#Load data
+Worldshape <- st_read(here("Data","World_Countries__Generalized_.shp" ))
+#check CRS
+print(Worldshape)
+
+GGIcsv <- read_csv(here::here("Data","HDR21-22_Composite_indices_complete_time_series.csv"))
+print(GGIcsv)
+
+```
+
+```{r}
+#Checking the class
+class(Worldshape)
+class(GGIcsv)
+```
+
+
+```{r}
+#To check the class of CSV
+Datatypelist <- GGIcsv %>% 
+  summarise_all(class) %>%
+  pivot_longer(everything(), 
+               names_to="All_Colnames", 
+               values_to="Variable_coltype")
+```
+
+
+```{r}
+#cleaning col names of CSV
+cleandata <- GGIcsv %>%
+  clean_names()
+```
+
+```{r}
+#selecting required columns
+selecteddata <- cleandata%>%
+  dplyr::select(contains("iso3"), 
+                contains("country"),
+                contains("gii_rank_2021"),
+                contains("gii_2010"),
+                contains("gii_2019"))
+```
+
+```{r}
+
+#calculate difference between two
+
+inequalityIndx <- selecteddata %>% 
+  #new column with average of male and female life expectancy
+  mutate(Diffinequality= (gii_2019 - gii_2010))%>%
+  #select only columns we want
+  dplyr::select(iso3,
+         country,
+         gii_rank_2021, 
+         gii_2010,
+         gii_2019,
+         Diffinequality)
+
+```
+
+```{r}
+#join data post cleaning
+jointdata <- Worldshape %>% 
+  clean_names() %>%
+  left_join(., 
+            inequalityIndx,
+            by = c("country" = "country"))
+```
+
+```{r}
+#plot map
+
+library(tmap)
+library(tmaptools)
+tmap_mode("plot")
+
+#map of difference in inequality 
+qtm(jointdata, 
+    fill = "Diffinequality")
+```
+
