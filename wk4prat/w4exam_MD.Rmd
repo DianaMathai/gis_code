@@ -2,6 +2,7 @@
 title: "wk4Exam"
 output: html_document
 ---
+
 ```{r}
 library(tidyverse)
 library(dplyr)
@@ -26,7 +27,6 @@ class(Worldshape)
 class(GGIcsv)
 ```
 
-
 ```{r}
 #To check the class of CSV
 Datatypelist <- GGIcsv %>% 
@@ -36,16 +36,15 @@ Datatypelist <- GGIcsv %>%
                values_to="Variable_coltype")
 ```
 
-
 ```{r}
 #cleaning col names of CSV
-cleandata <- GGIcsv %>%
+cleandatacsv <- GGIcsv %>%
   clean_names()
 ```
 
 ```{r}
 #selecting required columns
-selecteddata <- cleandata%>%
+selecteddatacsv <- cleandatacsv%>%
   dplyr::select(contains("iso3"), 
                 contains("country"),
                 contains("gii_rank_2021"),
@@ -57,7 +56,7 @@ selecteddata <- cleandata%>%
 
 #calculate difference between two
 
-inequalityIndx <- selecteddata %>% 
+selecteddata <- selecteddatacsv %>% 
   #new column with average of male and female life expectancy
   mutate(Diffinequality= (gii_2019 - gii_2010))%>%
   #select only columns we want
@@ -71,23 +70,78 @@ inequalityIndx <- selecteddata %>%
 ```
 
 ```{r}
-#join data post cleaning
-jointdata <- Worldshape %>% 
-  clean_names() %>%
-  left_join(., 
-            inequalityIndx,
-            by = c("country" = "country"))
+#slice only the required dataset
+
+inequalityIndx<-selecteddata%>% slice(1:195)
+print(inequalityIndx)
 ```
 
-```{r}
-#plot map
 
+
+```{r}
+#introduce to iso2c values corresponding to the countryvar in the csv
+library(countrycode)
+
+countrycodeiso2<-inequalityIndx%>%
+  mutate(iso2c=countrycode(inequalityIndx$country, origin = 'country.name', destination = 'iso2c'))
+
+print(countrycodeiso2)
+```
+
+
+
+```{r}
+#join data post cleaning
+
+Ljointdata <- Worldshape %>% 
+  clean_names() %>%
+  left_join(., 
+            countrycodeiso2,
+            by = c("iso"= "iso2c"))
+
+```
+
+
+
+```{r}
+#removing na files
+data<-na.omit(Ljointdata)
+```
+
+
+
+```{r}
+#map plot
 library(tmap)
 library(tmaptools)
 tmap_mode("plot")
 
 #map of difference in inequality 
-qtm(jointdata, 
+qtm(data, 
     fill = "Diffinequality")
+
 ```
 
+
+```{r}
+#more plot
+tmapworld <- data %>%
+  st_bbox(.) %>% 
+  tmaptools::read_osm(., type = "osm", zoom = NULL)
+
+
+
+tm_shape(data)+
+tm_polygons("Diffinequality", 
+        style="jenks",
+        palette="YlOrBr",
+        midpoint=NA,
+        title="Difference in inequality",
+        alpha = 0.9) + 
+  tm_compass(position = c("left", "bottom"),type = "arrow") + 
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_layout(title = "Global difference in inequality between 2010 and 2019", legend.position = c("right", "bottom"))
+
+```
+
+\`\`\`
