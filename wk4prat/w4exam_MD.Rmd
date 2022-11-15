@@ -12,11 +12,11 @@ library(tidyr)
 library(janitor)
 
 #Load data
-Worldshape <- st_read(here("Data","World_Countries__Generalized_.shp" ))
+Worldshape <- st_read(here('wk4prat',"Data","World_Countries__Generalized_.shp" ))
 #check CRS
 print(Worldshape)
 
-GGIcsv <- read_csv(here::here("Data","HDR21-22_Composite_indices_complete_time_series.csv"))
+GGIcsv <- read_csv(here::here('wk4prat',"Data","HDR21-22_Composite_indices_complete_time_series.csv"))
 print(GGIcsv)
 
 ```
